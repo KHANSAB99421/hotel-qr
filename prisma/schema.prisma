@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id      Int      @id @default(autoincrement())
+  room_no String   @unique
+  floor   Int
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  category    String
+  available   Boolean     @default(true)
+  orderItems  OrderItem[]
+}
+
+model Session {
+  id          Int       @id @default(autoincrement())
+  room_id     Int
+  roomNumber  String    // Keeping for legacy frontend compatibility during migration
+  guestName   String?
+  checkinAt   DateTime  @default(now())
+  checkoutAt  DateTime?
+  active      Boolean   @default(true)
+  totalAmount Float     @default(0)
+  orders      Order[]
+  bill        Bill?
+}
+
+model Bill {
+  id           Int      @id @default(autoincrement())
+  session_id   Int      @unique
+  total        Float
+  created_at   DateTime @default(now())
+  room_id      String
+  items        String   // JSON snapshot
+  status       String   @default("PENDING")
+
+  session      Session  @relation(fields: [session_id], references: [id])
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  roomNumber  String
+  floorNumber Int
+  category    String
+  status      String   @default("PENDING")
+  totalPrice  Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sessionId   Int?
+  session     Session? @relation(fields: [sessionId], references: [id])
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id                 String   @id @default(cuid())
+  orderId            String
+  menuItemId         String
+  quantity           Int
+  priceAtTimeOfOrder Float    @default(0)
+  order              Order    @relation(fields: [orderId], references: [id])
+  menuItem           MenuItem @relation(fields: [menuItemId], references: [id])
+}
